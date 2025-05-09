@@ -337,9 +337,8 @@ export function Canvas({
         onMouseLeave={handleMouseUp} 
         className="w-full h-full"
       >
-        {/* This rect acts as the background. Its fill is for visual appearance on screen. */}
-        {/* For export, a white background might be hardcoded if this is themed. */}
-        <rect width="100%" height="100%" fill="var(--canvas-background, #F3F4F6)" /> {/* Light gray background, fallback to #F3F4F6 */}
+        {/* Explicitly set a light gray background for the canvas area, bypassing CSS variables for this element. */}
+        <rect width="100%" height="100%" fill="#F5F5F5" />
         
         <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomFactor})`}>
           {/* Optional: Render a grid or background pattern here, ensure it's within the "world" space */}
