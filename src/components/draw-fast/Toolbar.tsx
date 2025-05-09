@@ -1,7 +1,7 @@
 
 "use client";
 
-import * as React from 'react'; // Added React import
+import * as React from 'react';
 import type { ShapeTool, ShapeStyle } from '@/types/draw';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,16 @@ import {
   ZoomIn,
   ZoomOut,
   MousePointer2,
-  Eraser
+  Eraser,
+  Wand2, // AI icon
+  GitFork, // Diagram icon
+  // LayoutDashboard, // Board icon (for future use)
+  // GanttChartSquare, // Timeline icon (for future use)
+  // ClipboardList, // Project Plan icon (for future use)
 } from 'lucide-react';
 import { ArrowToolIcon } from './icons/ArrowToolIcon';
+
+export type AiGenerationMode = 'diagram' | 'board' | 'timeline' | 'plan';
 
 interface ToolbarProps {
   selectedTool: ShapeTool;
@@ -43,6 +50,7 @@ interface ToolbarProps {
   onClearCanvas: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onOpenAiModal: (mode: AiGenerationMode) => void; // New prop for AI modal
 }
 
 export function Toolbar({
@@ -60,6 +68,7 @@ export function Toolbar({
   onClearCanvas,
   onZoomIn,
   onZoomOut,
+  onOpenAiModal, // Destructure new prop
 }: ToolbarProps) {
   const importJsonInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -73,6 +82,7 @@ export function Toolbar({
   return (
     <div className="p-3 bg-card shadow-md flex flex-col md:flex-row md:items-center gap-4 w-full border-b">
       <div className="flex items-center gap-2 flex-wrap">
+        {/* Drawing Tools */}
         <ToggleGroup
           type="single"
           value={selectedTool}
@@ -106,6 +116,7 @@ export function Toolbar({
 
         <Separator orientation="vertical" className="h-8 hidden md:block" />
 
+        {/* Styling Options */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="icon" aria-label="Styling Options">
@@ -132,7 +143,7 @@ export function Toolbar({
                 value={currentStyle.fillColor}
                 onChange={(e) => onStyleChange({ fillColor: e.target.value })}
                 className="h-8 mt-1"
-                disabled={!isShapeToolActive || selectedTool === 'line' || selectedTool === 'arrow' || selectedTool === 'eraser'}
+                disabled={!isShapeToolActive || selectedTool === 'line' || selectedTool === 'arrow' || selectedTool === 'text' || selectedTool === 'eraser'}
               />
             </div>
             <div>
@@ -145,7 +156,7 @@ export function Toolbar({
                 value={currentStyle.strokeWidth}
                 onChange={(e) => onStyleChange({ strokeWidth: parseInt(e.target.value, 10) || 1 })}
                 className="h-8 mt-1"
-                disabled={selectedTool === 'eraser'}
+                // disabled={selectedTool === 'eraser'} // Eraser size might be linked to this later
               />
             </div>
             {selectedTool === 'text' && (
@@ -168,6 +179,7 @@ export function Toolbar({
 
       <Separator orientation="vertical" className="h-8 hidden md:block" />
 
+      {/* History and Zoom Controls */}
       <div className="flex items-center gap-2 flex-wrap">
         <Button variant="outline" size="icon" onClick={onUndo} disabled={!canUndo} aria-label="Undo">
           <Undo className="h-5 w-5" />
@@ -175,11 +187,7 @@ export function Toolbar({
         <Button variant="outline" size="icon" onClick={onRedo} disabled={!canRedo} aria-label="Redo">
           <Redo className="h-5 w-5" />
         </Button>
-      </div>
-      
-      <Separator orientation="vertical" className="h-8 hidden md:block" />
-
-      <div className="flex items-center gap-2 flex-wrap">
+        <Separator orientation="vertical" className="h-8 mx-1 hidden md:block" />
         <Button variant="outline" size="icon" onClick={onZoomIn} aria-label="Zoom In">
           <ZoomIn className="h-5 w-5" />
         </Button>
@@ -187,10 +195,36 @@ export function Toolbar({
           <ZoomOut className="h-5 w-5" />
         </Button>
       </div>
-
+      
       <div className="flex-grow hidden md:block"></div> {/* Spacer */}
 
+      {/* AI Generate and File Operations */}
       <div className="flex items-center gap-2 flex-wrap">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="gap-2" aria-label="AI Generation Options">
+              <Wand2 className="h-5 w-5" />
+              <span className="hidden sm:inline">AI Generate</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2">
+            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => onOpenAiModal('diagram')}>
+              <GitFork className="h-4 w-4" /> Generate Diagram
+            </Button>
+            {/* 
+            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => onOpenAiModal('board')}>
+              <LayoutDashboard className="h-4 w-4" /> Generate Board
+            </Button>
+            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => onOpenAiModal('timeline')}>
+              <GanttChartSquare className="h-4 w-4" /> Generate Timeline
+            </Button>
+            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => onOpenAiModal('plan')}>
+              <ClipboardList className="h-4 w-4" /> Generate Project Plan
+            </Button>
+             */}
+          </PopoverContent>
+        </Popover>
+
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="gap-2" aria-label="File Operations">

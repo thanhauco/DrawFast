@@ -1,9 +1,10 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 @layer base {
@@ -51,6 +52,8 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --canvas-background: 220 13% 97%; /* Light almost white-gray e.g. #F7F8FA */
   }
 
   .dark {
@@ -96,6 +99,8 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --canvas-background: 206 10% 18%; /* Darker gray for dark mode canvas, e.g. #262A2E */
   }
 }
 
@@ -107,3 +112,4 @@ body {
     @apply bg-background text-foreground;
   }
 }
+

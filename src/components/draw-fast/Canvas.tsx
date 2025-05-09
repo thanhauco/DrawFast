@@ -53,24 +53,28 @@ export function Canvas({
     if (!svgRef.current) return { x: 0, y: 0 };
     const CTM = svgRef.current.getScreenCTM();
     if (!CTM) return { x: 0, y: 0 };
+    // Adjust for panOffset and zoomFactor before returning coordinates
+    // The coordinates should be relative to the "world" space of the canvas content, not the screen.
     return {
-      x: (event.clientX - CTM.e - panOffset.x) / CTM.a / zoomFactor,
-      y: (event.clientY - CTM.f - panOffset.y) / CTM.d / zoomFactor,
+        x: (event.clientX - panOffset.x) / zoomFactor - CTM.e / CTM.a,
+        y: (event.clientY - panOffset.y) / zoomFactor - CTM.f / CTM.d,
     };
   };
   
   const handleMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {
     if (isTextEditing) return;
-    const pos = getMousePosition(event);
+     // Use clientX/clientY for panning start, as it's relative to viewport
+    const screenPos = { x: event.clientX, y: event.clientY };
 
-    if (event.button === 1 || (event.button === 0 && event.altKey)) { // Middle mouse or Alt+Left Click for panning
+    if (event.button === 1 || (event.button === 0 && event.altKey)) { 
       setIsPanning(true);
-      setLastPanPoint({ x: event.clientX, y: event.clientY });
+      setLastPanPoint(screenPos);
       return;
     }
     
-    if (event.button !== 0) return; // Only left click for drawing
+    if (event.button !== 0) return;
 
+    const pos = getMousePosition(event); // Get world coordinates for drawing
     setIsDrawing(true);
     setStartPoint(pos);
 
@@ -80,7 +84,6 @@ export function Canvas({
       eraseAtPoint(pos);
     } else if (selectedTool !== 'select') {
       const id = crypto.randomUUID();
-      // Initialize preview shape
       switch (selectedTool) {
         case 'rectangle':
           setPreviewShape({ id, type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, style: currentStyle });
@@ -104,11 +107,17 @@ export function Canvas({
       setLastPanPoint({ x: event.clientX, y: event.clientY });
       return;
     }
-
-    if (!isDrawing || !startPoint || selectedTool === 'select' || selectedTool === 'text' || isTextEditing) return;
     
-    const pos = getMousePosition(event);
+    const pos = getMousePosition(event); // World coordinates
 
+    if (!isDrawing || !startPoint || selectedTool === 'select' || selectedTool === 'text' || isTextEditing) {
+        // If text tool is active but not drawing (i.e. before first click), update preview for text cursor
+        if (selectedTool === 'text' && !isTextEditing) {
+            // This could be used to show a text cursor preview if desired
+        }
+        return;
+    }
+    
     if (selectedTool === 'eraser') {
       eraseAtPoint(pos);
       return;
@@ -145,9 +154,15 @@ export function Canvas({
     }
 
     if (isTextEditing && textEditingPosition) {
-      // Handled by text input blur/enter
+      // Text input blur/enter handles this
     } else if (isDrawing && previewShape && selectedTool !== 'select' && selectedTool !== 'text' && selectedTool !== 'eraser') {
-      onShapesChange([...shapes, previewShape]);
+      if (previewShape.type === 'rectangle' && (previewShape.width === 0 || previewShape.height === 0)) {
+        // Don't add zero-size rectangles
+      } else if (previewShape.type === 'circle' && previewShape.radius === 0) {
+        // Don't add zero-radius circles
+      } else {
+        onShapesChange([...shapes, previewShape]);
+      }
     }
     
     setIsDrawing(false);
@@ -156,28 +171,31 @@ export function Canvas({
   };
 
   const eraseAtPoint = (point: Point) => {
-    const eraserSize = currentStyle.strokeWidth * 2; // Eraser size based on stroke width
+    const eraserSensitivity = currentStyle.strokeWidth * 1.5 + 5; // Make eraser more sensitive
     const newShapes = shapes.filter(shape => {
-      // Basic bounding box check for simplicity
-      // More precise hit detection would be needed for complex shapes or pixel-perfect erasing
       if (shape.type === 'rectangle' && shape.width !== undefined && shape.height !== undefined) {
-        return !(point.x > shape.x - eraserSize && point.x < shape.x + shape.width + eraserSize &&
-                 point.y > shape.y - eraserSize && point.y < shape.y + shape.height + eraserSize);
+        return !(point.x >= shape.x - eraserSensitivity && point.x <= shape.x + shape.width + eraserSensitivity &&
+                 point.y >= shape.y - eraserSensitivity && point.y <= shape.y + shape.height + eraserSensitivity);
       }
       if (shape.type === 'circle' && shape.radius !== undefined) {
         const dist = Math.sqrt(Math.pow(point.x - shape.x, 2) + Math.pow(point.y - shape.y, 2));
-        return dist > shape.radius + eraserSize;
+        return dist > shape.radius - eraserSensitivity && dist > eraserSensitivity; // Check if outside or too small
       }
-      // For lines/arrows, check distance to line segment. Simplified: check endpoints.
       if ((shape.type === 'line' || shape.type === 'arrow') && shape.points) {
          const [p1, p2] = shape.points;
-         const dist1 = Math.sqrt(Math.pow(point.x - p1.x, 2) + Math.pow(point.y - p1.y, 2));
-         const dist2 = Math.sqrt(Math.pow(point.x - p2.x, 2) + Math.pow(point.y - p2.y, 2));
-         return !(dist1 < eraserSize || dist2 < eraserSize); // This is a very rough check
+         // Check distance from point to line segment
+         const lenSq = (p2.x - p1.x)**2 + (p2.y - p1.y)**2;
+         if (lenSq === 0) return Math.sqrt((point.x - p1.x)**2 + (point.y - p1.y)**2) > eraserSensitivity; // Point
+         let t = ((point.x - p1.x) * (p2.x - p1.x) + (point.y - p1.y) * (p2.y - p1.y)) / lenSq;
+         t = Math.max(0, Math.min(1, t));
+         const projX = p1.x + t * (p2.x - p1.x);
+         const projY = p1.y + t * (p2.y - p1.y);
+         return Math.sqrt((point.x - projX)**2 + (point.y - projY)**2) > eraserSensitivity;
       }
-      if (shape.type === 'text' && shape.width !== undefined && shape.height !== undefined) { // Approximate text bounding box
-        return !(point.x > shape.x - eraserSize && point.x < shape.x + shape.width + eraserSize &&
-                 point.y > shape.y - shape.height - eraserSize && point.y < shape.y + eraserSize);
+      if (shape.type === 'text' && shape.text && shape.width !== undefined && shape.height !== undefined) {
+         // Use estimated width/height for text bounding box check
+        return !(point.x >= shape.x - eraserSensitivity && point.x <= shape.x + shape.width + eraserSensitivity &&
+                 point.y >= shape.y - eraserSensitivity && point.y <= shape.y + shape.height + eraserSensitivity);
       }
       return true;
     });
@@ -190,8 +208,25 @@ export function Canvas({
   useEffect(() => {
     if (isTextEditing && textInputRef.current) {
       textInputRef.current.focus();
+      // Position calculation requires CTM from SVG, ensure it's available
+        if (svgRef.current && textEditingPosition) {
+            const CTM = svgRef.current.getScreenCTM();
+            if (CTM) {
+                const screenX = (textEditingPosition.x * zoomFactor * CTM.a) + CTM.e + panOffset.x;
+                const screenY = (textEditingPosition.y * zoomFactor * CTM.d) + CTM.f + panOffset.y;
+                
+                textInputRef.current.style.left = `${screenX}px`;
+                textInputRef.current.style.top = `${screenY}px`;
+                // Font size also needs to be scaled by zoom factor for visual consistency
+                textInputRef.current.style.fontSize = `${currentStyle.fontSize * zoomFactor}px`;
+                textInputRef.current.style.minWidth = `${100 * zoomFactor}px`;
+                textInputRef.current.style.minHeight = `${currentStyle.fontSize * 1.5 * zoomFactor}px`;
+
+            }
+        }
     }
-  }, [isTextEditing]);
+  }, [isTextEditing, textEditingPosition, zoomFactor, panOffset, currentStyle.fontSize]);
+
 
   const handleTextareaBlur = () => {
     if (isTextEditing && textEditingPosition) {
@@ -206,14 +241,18 @@ export function Canvas({
         onTextEditEnd(textEditingValue, textEditingPosition, currentStyle);
       }
     }
+     if (e.key === 'Escape') {
+      setIsTextEditing(false); // Assuming onTextEditEnd handles cleanup
+      onTextEditEnd("", textEditingPosition!, currentStyle); // Pass empty to cancel
+    }
   };
 
   const renderShape = (shape: DrawingShape) => {
     const { id, type, style } = shape;
     const baseProps = {
       stroke: style.strokeColor,
-      strokeWidth: style.strokeWidth,
-      fill: style.fillColor,
+      strokeWidth: style.strokeWidth / zoomFactor, // Scale stroke width inversely with zoom for visual consistency
+      fill: style.fillColor === 'transparent' ? 'none' : style.fillColor, // SVG uses 'none' for transparent fill
     };
 
     switch (type) {
@@ -228,19 +267,21 @@ export function Canvas({
         return <line key={id} x1={line.points[0].x} y1={line.points[0].y} x2={line.points[1].x} y2={line.points[1].y} {...baseProps} fill="none" />;
       case 'arrow':
         const arrow = shape as import('@/types/draw').ArrowShape;
-        const markerId = `arrowhead-${id}`;
+        const markerId = `arrowhead-${id.replace(/[^a-zA-Z0-9]/g, '')}`; // Ensure valid ID
+        const arrowStrokeWidth = style.strokeWidth / zoomFactor;
         return (
           <g key={id}>
             <defs>
               <marker
                 id={markerId}
-                markerWidth="10"
-                markerHeight="7"
-                refX="10" 
-                refY="3.5"
-                orient="auto"
+                markerWidth={Math.max(5, 10 * (arrowStrokeWidth / 2))} // Scale arrowhead with stroke width
+                markerHeight={Math.max(3.5, 7 * (arrowStrokeWidth / 2))}
+                refX={Math.max(5, 10 * (arrowStrokeWidth / 2))} // Adjust refX based on markerWidth
+                refY={Math.max(1.75, 3.5 * (arrowStrokeWidth / 2))} // Adjust refY based on markerHeight
+                orient="auto-start-reverse"
+                markerUnits="userSpaceOnUse" // Important for scaling with strokeWidth
               >
-                <polygon points="0 0, 10 3.5, 0 7" fill={style.strokeColor} />
+                <polygon points={`0 0, ${Math.max(5,10 * (arrowStrokeWidth/2))} ${Math.max(1.75,3.5 * (arrowStrokeWidth/2))}, 0 ${Math.max(3.5,7 * (arrowStrokeWidth/2))}`} fill={style.strokeColor} />
               </marker>
             </defs>
             <line
@@ -249,6 +290,7 @@ export function Canvas({
               x2={arrow.points[1].x}
               y2={arrow.points[1].y}
               {...baseProps}
+              strokeWidth={arrowStrokeWidth} // Use scaled stroke width
               fill="none"
               markerEnd={`url(#${markerId})`}
             />
@@ -261,12 +303,17 @@ export function Canvas({
             key={id}
             x={textShape.x}
             y={textShape.y}
-            fontSize={style.fontSize}
+            fontSize={style.fontSize} // Font size is absolute, not scaled by zoom here. It's scaled in textarea.
             fontFamily={style.fontFamily}
-            fill={style.strokeColor} // Text uses strokeColor for its color
+            fill={style.strokeColor} 
             dominantBaseline="hanging"
+            style={{ userSelect: 'none' }} // Prevent text selection on canvas
           >
-            {textShape.text}
+            {textShape.text.split('\n').map((line, index) => (
+                <tspan key={index} x={textShape.x} dy={index === 0 ? 0 : `${style.fontSize * 1.2}px`}>
+                    {line}
+                </tspan>
+            ))}
           </text>
         );
       default:
@@ -274,14 +321,12 @@ export function Canvas({
     }
   };
   
-  // This is a simple way to set canvas size.
-  // For a production app, you might want a more robust solution for resizing.
-  const effectiveCanvasWidth = canvasSize.width * 2; // Make canvas larger than viewport for panning
-  const effectiveCanvasHeight = canvasSize.height * 2;
+  const effectiveCanvasWidth = canvasSize.width * 3; // Larger virtual canvas for panning
+  const effectiveCanvasHeight = canvasSize.height * 3;
 
 
   return (
-    <div className="flex-grow w-full h-full bg-card overflow-hidden relative cursor-crosshair" style={{ touchAction: 'none' }}>
+    <div className="flex-grow w-full h-full bg-gray-100 overflow-hidden relative cursor-crosshair" style={{ touchAction: 'none' }}>
       <svg
         ref={svgRef}
         width={canvasSize.width}
@@ -289,23 +334,29 @@ export function Canvas({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp} // End drawing if mouse leaves canvas
+        onMouseLeave={handleMouseUp} 
         className="w-full h-full"
-        // viewBox defines the coordinate system of the SVG.
-        // This will be affected by panOffset and zoomFactor to simulate camera movement.
-        // However, for simplicity with getScreenCTM, we keep viewBox static and use transform on a group.
-        // viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`} 
       >
-        <rect width="100%" height="100%" fill="#FFFFFF" /> {/* Canvas background set to white */}
+        {/* This rect acts as the background. Its fill is for visual appearance on screen. */}
+        {/* For export, a white background might be hardcoded if this is themed. */}
+        <rect width="100%" height="100%" fill="var(--canvas-background, #F3F4F6)" /> {/* Light gray background, fallback to #F3F4F6 */}
+        
         <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomFactor})`}>
-          {/* Optional: Render a grid or background pattern here */}
-          <rect x={-effectiveCanvasWidth/4} y={-effectiveCanvasHeight/4} width={effectiveCanvasWidth} height={effectiveCanvasHeight} fill="transparent" stroke="rgba(0,0,0,0.05)" strokeWidth={1/zoomFactor} />
+          {/* Optional: Render a grid or background pattern here, ensure it's within the "world" space */}
+          {/* The grid lines should be scaled inversely by zoomFactor to maintain visual thickness */}
+          <defs>
+            <pattern id="grid" width={50/zoomFactor} height={50/zoomFactor} patternUnits="userSpaceOnUse">
+              <path d={`M ${50/zoomFactor} 0 L 0 0 0 ${50/zoomFactor}`} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth={1/zoomFactor}/>
+            </pattern>
+          </defs>
+          <rect x={-effectiveCanvasWidth/3} y={-effectiveCanvasHeight/3} width={effectiveCanvasWidth} height={effectiveCanvasHeight} fill="url(#grid)" />
 
           {shapes.map(renderShape)}
           {previewShape && renderShape(previewShape)}
         </g>
       </svg>
       {isTextEditing && textEditingPosition && (
+        // Textarea is positioned absolutely on top of the SVG
         <textarea
           ref={textInputRef}
           value={textEditingValue}
@@ -314,21 +365,21 @@ export function Canvas({
           onKeyDown={handleTextareaKeyDown}
           style={{
             position: 'absolute',
-            left: `${(textEditingPosition.x * zoomFactor) + panOffset.x}px`,
-            top: `${(textEditingPosition.y * zoomFactor) + panOffset.y}px`,
-            transform: `scale(${zoomFactor})`, // Scale textarea with zoom
-            transformOrigin: 'top left',
-            minWidth: '100px',
-            minHeight: `${currentStyle.fontSize * 1.5}px`,
-            fontSize: `${currentStyle.fontSize}px`, // Font size applied directly
-            fontFamily: currentStyle.fontFamily,
-            lineHeight: '1.2',
+            // Initial position, will be updated by useEffect
+            left: `0px`, 
+            top: `0px`,
+            // transformOrigin and fontSize are handled in useEffect to correctly use CTM for positioning and scaling
+            transformOrigin: 'top left', 
             border: '1px dashed var(--primary)',
             outline: 'none',
             padding: '2px',
-            background: 'var(--card)', // Textarea background can still use theme card
+            background: 'var(--card)', 
             color: 'var(--foreground)',
-            zIndex: 100,
+            zIndex: 1000, // Ensure textarea is on top
+            fontFamily: currentStyle.fontFamily,
+            lineHeight: '1.2',
+            overflow: 'hidden', // Hide scrollbars initially, adjust with content
+            resize: 'none', // Can be 'both' if manual resize is desired
           }}
           className="shadow-lg rounded-sm"
         />
