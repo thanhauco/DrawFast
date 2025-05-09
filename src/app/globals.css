@@ -53,37 +53,37 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --canvas-background: 0 0% 98%; /* #FAFAFA - Lighter gray */
+    --canvas-background: 0 0% 98%; /* #FAFAFA - Lighter gray for canvas */
   }
 
   .dark {
-    --background: 206 10% 15%;   /* Darker, slightly blueish gray */
-    --foreground: 0 0% 98%;      /* Light text */
+    --background: 210 10% 70%;   /* Light-medium gray-blue, not dark */
+    --foreground: 0 0% 10%;      /* Dark text for contrast */
 
-    --card: 206 10% 20%;         /* Darker card background */
-    --card-foreground: 0 0% 98%;
+    --card: 210 10% 80%;         /* Lighter card background */
+    --card-foreground: 0 0% 10%; /* Dark text */
 
-    --popover: 206 10% 15%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 210 10% 78%;      /* Slightly lighter popover background */
+    --popover-foreground: 0 0% 10%; /* Dark text */
 
     --primary: 206 70% 65%;      /* Lighter blue for dark mode */
     --primary-foreground: 0 0% 10%; /* Darker text on lighter blue */
 
-    --secondary: 210 10% 25%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 210 10% 88%;   /* Lighter secondary background */
+    --secondary-foreground: 0 0% 10%; /* Dark text */
 
-    --muted: 210 10% 25%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted: 210 10% 92%;        /* Very light muted background */
+    --muted-foreground: 210 10% 45%; /* Mid-dark gray text */
 
     --accent: 206 70% 65%;        /* Lighter blue for dark mode */
-    --accent-foreground: 0 0% 10%;
+    --accent-foreground: 0 0% 10%; /* Dark text */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%; /* Original dark theme destructive red (dark red) */
+    --destructive-foreground: 0 0% 98%; /* Light text for destructive */
 
-    --border: 210 10% 30%;
-    --input: 210 10% 30%;
-    --ring: 206 70% 65%;
+    --border: 210 10% 60%;       /* Medium-light border */
+    --input: 210 10% 88%;        /* Light input background, same as secondary */
+    --ring: 206 70% 65%;         /* Lighter blue for focus rings */
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -91,16 +91,16 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 220 10% 85%;       /* Light cool gray sidebar */
+    --sidebar-foreground: 220 10% 20%;       /* Dark text for sidebar */
+    --sidebar-primary: 224.3 76.3% 48%;      /* Original dark theme sidebar primary (mid blue) */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text on sidebar primary */
+    --sidebar-accent: 220 10% 90%;           /* Lighter cool gray for sidebar accent */
+    --sidebar-accent-foreground: 220 10% 20%;/* Dark text for sidebar accent */
+    --sidebar-border: 220 10% 70%;           /* Medium cool gray for sidebar border */
+    --sidebar-ring: 217.2 91.2% 59.8%;       /* Original dark theme sidebar ring (bright blue) */
 
-    --canvas-background: 206 10% 18%; /* Darker gray for dark mode canvas, e.g. #262A2E */
+    --canvas-background: 0 0% 98%; /* #FAFAFA - Consistently light canvas background */
   }
 }
 
@@ -112,4 +112,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
