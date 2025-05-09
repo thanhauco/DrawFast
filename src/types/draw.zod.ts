@@ -17,7 +17,7 @@ export type ShapeStyle = z.infer<typeof ShapeStyleSchema>;
 
 // Base schema for AI generation, excludes client-only fields like 'selected'
 const BaseShapeSchemaForAI = z.object({
-  id: z.string().uuid().describe('A unique identifier for the shape (UUID). This must be a valid v4 UUID string.'),
+  id: z.string().describe('A unique identifier for the shape. This should be a v4 UUID string, but the format is not strictly enforced by this schema for API compatibility.'),
   style: ShapeStyleSchema.describe('The styling properties for the shape. Follow default values if not specified otherwise by context.'),
   x: z.number().describe('The primary x-coordinate of the shape (e.g., top-left for rectangle, center for circle, top-left for text).'),
   y: z.number().describe('The primary y-coordinate of the shape (e.g., top-left for rectangle, center for circle, top-left for text).'),
@@ -31,19 +31,17 @@ const BaseShapeSchemaForAI = z.object({
 
 // Specific shape schemas for AI, extending the AI base schema
 const RectangleShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.string().describe("The type of the shape. For this shape, it MUST be the exact string 'rectangle'."),
+  type: z.literal('rectangle').describe("The type of the shape. For this shape, it MUST be the exact string 'rectangle'."),
   width: z.number().min(1).describe('The width of the rectangle. Must be a positive number.'),
   height: z.number().min(1).describe('The height of the rectangle. Must be a positive number.'),
-  // Explicitly mark fields not relevant to Rectangle as undefined and optional
   points: z.undefined({ description: "Not applicable for rectangles. This field should be omitted." }).optional(),
   radius: z.undefined({ description: "Not applicable for rectangles. This field should be omitted." }).optional(),
   text: z.undefined({ description: "Not applicable for rectangles. This field should be omitted." }).optional(),
 });
 
 const CircleShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.string().describe("The type of the shape. For this shape, it MUST be the exact string 'circle'."),
+  type: z.literal('circle').describe("The type of the shape. For this shape, it MUST be the exact string 'circle'."),
   radius: z.number().min(1).describe('The radius of the circle. Must be a positive number.'),
-  // For Circle, width and height are typically 2*radius. AI can omit them or set them if it helps contextually.
   width: z.number().min(1).optional().describe('Optional: width of the circle (diameter). If provided, should be 2 * radius. Can be omitted.'),
   height: z.number().min(1).optional().describe('Optional: height of the circle (diameter). If provided, should be 2 * radius. Can be omitted.'),
   points: z.undefined({ description: "Not applicable for circles. This field should be omitted." }).optional(),
@@ -51,7 +49,7 @@ const CircleShapeSchemaAI = BaseShapeSchemaForAI.extend({
 });
 
 const LineShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.string().describe("The type of the shape. For this shape, it MUST be the exact string 'line'."),
+  type: z.literal('line').describe("The type of the shape. For this shape, it MUST be the exact string 'line'."),
   points: z.array(PointSchema).length(2, { message: "Line 'points' must be an array of exactly two Point objects." }).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape should generally be the coordinates of the first point in this array, or (0,0) if points are absolute world coordinates.'),
   width: z.undefined({ description: "Not applicable for lines. This field should be omitted." }).optional(),
   height: z.undefined({ description: "Not applicable for lines. This field should be omitted." }).optional(),
@@ -60,7 +58,7 @@ const LineShapeSchemaAI = BaseShapeSchemaForAI.extend({
 });
 
 const ArrowShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.string().describe("The type of the shape. For this shape, it MUST be the exact string 'arrow'."),
+  type: z.literal('arrow').describe("The type of the shape. For this shape, it MUST be the exact string 'arrow'."),
   points: z.array(PointSchema).length(2, { message: "Arrow 'points' must be an array of exactly two Point objects." }).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape should generally be the coordinates of the first point in this array, or (0,0) if points are absolute world coordinates.'),
   width: z.undefined({ description: "Not applicable for arrows. This field should be omitted." }).optional(),
   height: z.undefined({ description: "Not applicable for arrows. This field should be omitted." }).optional(),
@@ -69,7 +67,7 @@ const ArrowShapeSchemaAI = BaseShapeSchemaForAI.extend({
 });
 
 const TextShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.string().describe("The type of the shape. For this shape, it MUST be the exact string 'text'."),
+  type: z.literal('text').describe("The type of the shape. For this shape, it MUST be the exact string 'text'."),
   text: z.string().min(1, { message: "Text content for a 'text' shape cannot be empty." }).describe('The text content. Must not be empty.'),
   width: z.number().min(1).optional().describe('Optional: The estimated width of the text bounding box. If provided, must be positive. Helpful for layout if determinable.'),
   height: z.number().min(1).optional().describe('Optional: The estimated height of the text bounding box. If provided, must be positive. Helpful for layout if determinable.'),
@@ -105,7 +103,7 @@ export type AiGeneratedShapes = z.infer<typeof AiGeneratedShapesSchema>;
 
 // Board Item Schema
 export const BoardItemSchema = z.object({
-    id: z.string().uuid().describe("Unique ID for the board item (UUID v4)."),
+    id: z.string().describe("Unique ID for the board item (should be a UUID v4, but not strictly enforced by schema for API compatibility)."),
     type: z.enum(['note', 'topic', 'action_item', 'question', 'idea']).describe("Type of board item."),
     content: z.string().min(1).describe("Text content of the item."),
     x: z.number().describe("Conceptual X position on the board (e.g., 0-1000)."),
@@ -125,7 +123,7 @@ export type AiGeneratedBoard = z.infer<typeof AiGeneratedBoardSchema>;
 
 // Timeline Event Schema
 export const TimelineEventSchema = z.object({
-    id: z.string().uuid().describe("Unique ID for the timeline event (UUID v4)."),
+    id: z.string().describe("Unique ID for the timeline event (should be a UUID v4, but not strictly enforced by schema for API compatibility)."),
     title: z.string().min(1).describe("Title of the event."),
     date: z.string().describe("Date of the event (e.g., 'YYYY-MM-DD', 'Q1 2024', 'Mid-June'). Be consistent in format if possible."),
     description: z.string().optional().describe("Optional description of the event."),
@@ -142,14 +140,14 @@ export type AiGeneratedTimeline = z.infer<typeof AiGeneratedTimelineSchema>;
 
 // Project Plan Task Schema
 export const ProjectPlanTaskSchema = z.object({
-    id: z.string().uuid().describe("Unique ID for the task (UUID v4)."),
+    id: z.string().describe("Unique ID for the task (should be a UUID v4, but not strictly enforced by schema for API compatibility)."),
     name: z.string().min(1).describe("Name of the task."),
     assignee: z.string().optional().describe("Person or team assigned to the task. Optional."),
     startDate: z.string().optional().describe("Start date (e.g., 'YYYY-MM-DD'). Optional."),
     endDate: z.string().optional().describe("End date (e.g., 'YYYY-MM-DD'). Optional."),
     duration: z.string().optional().describe("Estimated duration (e.g., '3 days', '1 week'). Optional if start/end dates are given."),
     status: z.enum(['todo', 'in_progress', 'completed', 'blocked', 'on_hold']).optional().describe("Current status of the task. Optional, default to 'todo' if not specified."),
-    dependencies: z.array(z.string().uuid()).optional().describe("Array of task IDs this task depends on. Optional."),
+    dependencies: z.array(z.string()).optional().describe("Array of task IDs this task depends on (these IDs should also be UUIDs, but not strictly enforced by schema for API compatibility). Optional."),
     description: z.string().optional().describe("Detailed description or notes for the task. Optional."),
     priority: z.enum(['low', 'medium', 'high']).optional().describe("Priority of the task. Optional."),
 });
@@ -160,5 +158,3 @@ export const AiGeneratedProjectPlanSchema = z.object({
     tasks: z.array(ProjectPlanTaskSchema).describe("Array of tasks for the project plan. Define clear tasks with appropriate details. Consider logical flow and dependencies.")
 });
 export type AiGeneratedProjectPlan = z.infer<typeof AiGeneratedProjectPlanSchema>;
-
-    
