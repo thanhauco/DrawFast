@@ -296,7 +296,7 @@ export function Canvas({
         // However, for simplicity with getScreenCTM, we keep viewBox static and use transform on a group.
         // viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`} 
       >
-        <rect width="100%" height="100%" fill="var(--card)" />
+        <rect width="100%" height="100%" fill="#FFFFFF" /> {/* Canvas background set to white */}
         <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomFactor})`}>
           {/* Optional: Render a grid or background pattern here */}
           <rect x={-effectiveCanvasWidth/4} y={-effectiveCanvasHeight/4} width={effectiveCanvasWidth} height={effectiveCanvasHeight} fill="transparent" stroke="rgba(0,0,0,0.05)" strokeWidth={1/zoomFactor} />
@@ -326,7 +326,7 @@ export function Canvas({
             border: '1px dashed var(--primary)',
             outline: 'none',
             padding: '2px',
-            background: 'var(--card)',
+            background: 'var(--card)', // Textarea background can still use theme card
             color: 'var(--foreground)',
             zIndex: 100,
           }}
@@ -336,3 +336,4 @@ export function Canvas({
     </div>
   );
 }
+
