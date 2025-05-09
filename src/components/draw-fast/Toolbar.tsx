@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from 'react'; // Added React import
 import type { ShapeTool, ShapeStyle } from '@/types/draw';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

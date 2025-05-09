@@ -1,17 +1,18 @@
 
 import type { Metadata } from 'next';
-import { Geist_Sans as GeistSans, Geist_Mono as GeistMono } from 'next/font/google';
+import { Inter, Roboto_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"; // Import Toaster
 
-const geistSans = GeistSans({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-geist-sans', // Using the original CSS variable name for minimal changes
   subsets: ['latin'],
 });
 
-const geistMono = GeistMono({
-  variable: '--font-geist-mono',
+const roboto_mono = Roboto_Mono({
+  variable: '--font-geist-mono', // Using the original CSS variable name
   subsets: ['latin'],
+  weight: ['400', '700'], // Provide common weights
 });
 
 export const metadata: Metadata = {
@@ -26,10 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${roboto_mono.variable} font-sans antialiased`}>
         {children}
         <Toaster /> {/* Add Toaster here */}
       </body>
     </html>
   );
 }
+
