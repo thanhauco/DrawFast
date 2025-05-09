@@ -53,7 +53,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --canvas-background: 220 13% 97%; /* Light almost white-gray e.g. #F7F8FA */
+    --canvas-background: 0 0% 98%; /* #FAFAFA - Lighter gray */
   }
 
   .dark {
