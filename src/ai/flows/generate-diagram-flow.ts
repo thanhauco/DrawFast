@@ -34,7 +34,7 @@ The diagram should be represented as an array of shapes. Each shape must conform
 
 Key considerations for shape generation:
 - Canvas Context: Assume a canvas that is roughly 1000px wide and 700px high for initial layout. Shapes should be reasonably sized and positioned within this conceptual space. Strive for clarity and avoid unnecessary overlaps.
-- IDs: Every shape must have a unique UUID for its 'id' field.
+- IDs: Every shape must have a unique ID for its 'id' field (e.g., a v4 UUID string).
 - Coordinates:
     - For 'rectangle': 'x' and 'y' are the top-left coordinates. 'width' and 'height' are required.
     - For 'circle': 'x' and 'y' are the center coordinates. 'radius' is required.
@@ -48,6 +48,11 @@ Key considerations for shape generation:
     - For 'text' shapes, 'fillColor' should usually be 'transparent', and 'strokeColor' determines the text color.
 - Connectivity: For diagrams like flowcharts, use 'arrow' shapes to connect elements. Ensure arrow points logically connect related shapes, ideally pointing to the edge or center of shapes.
 - Content: Interpret the user's prompt to create meaningful content within shapes (for 'text' shapes or labels implied by the diagram type).
+- Completeness and Detail: Your goal is to create a diagram that accurately and comprehensively reflects the user's prompt.
+    - Ensure all key elements, steps, components, or ideas mentioned in the prompt are represented by one or more shapes.
+    - Generate a sufficient number of shapes. For simple prompts, this might be 3-5 shapes. For more complex or detailed prompts, aim for 10-20 shapes or more, as needed to capture the full intent. Do not oversimplify.
+    - If the prompt suggests relationships or connections, use appropriate connecting shapes (lines, arrows).
+    - Use a variety of appropriate shape types (rectangles, circles, text labels) to clearly distinguish different elements.
 
 User prompt: {{{prompt}}}
 
@@ -109,3 +114,4 @@ const generateDiagramFlow = ai.defineFlow(
     return { shapes: Array.isArray(output.shapes) ? output.shapes : [] };
   }
 );
+
