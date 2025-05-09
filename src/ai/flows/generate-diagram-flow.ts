@@ -1,5 +1,4 @@
-
-'use server';
+'use strict';
 /**
  * @fileOverview An AI flow to generate diagrams based on text prompts.
  *
@@ -34,7 +33,7 @@ The diagram should be represented as an array of shapes. Each shape must conform
 
 Key considerations for shape generation:
 - Canvas Context: Assume a canvas that is roughly 1000px wide and 700px high for initial layout. Shapes should be reasonably sized and positioned within this conceptual space. Strive for clarity and avoid unnecessary overlaps.
-- IDs: Every shape must have a unique ID for its 'id' field (e.g., a v4 UUID string).
+- IDs: Every shape must have a unique ID for its 'id' field (e.g., a v4 UUID string such as "a1b2c3d4-e5f6-7890-1234-567890abcdef").
 - Coordinates:
     - For 'rectangle': 'x' and 'y' are the top-left coordinates. 'width' and 'height' are required.
     - For 'circle': 'x' and 'y' are the center coordinates. 'radius' is required.
@@ -114,4 +113,3 @@ const generateDiagramFlow = ai.defineFlow(
     return { shapes: Array.isArray(output.shapes) ? output.shapes : [] };
   }
 );
-
