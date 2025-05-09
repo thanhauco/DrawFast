@@ -16,74 +16,55 @@ export const ShapeStyleSchema = z.object({
 });
 export type ShapeStyle = z.infer<typeof ShapeStyleSchema>;
 
-// Base schema for AI generation, excludes client-only fields like 'selected'
-const BaseShapeSchemaForAI = z.object({
-  id: z.string().describe('A unique identifier for the shape. It is recommended to use a v4 UUID string, though the schema does not strictly enforce the UUID format for API compatibility. Ensure uniqueness within the diagram.'),
+// Base schema for common properties of all shapes for AI generation.
+// Does not include the 'type' field as it's used as the discriminator.
+const BaseShapeSchemaZod = z.object({
+  id: z.string().describe('A unique identifier for the shape. It is recommended to use a v4 UUID string, though the schema does not strictly enforce the UUID format. Ensure uniqueness within the diagram.'),
   style: ShapeStyleSchema.describe('The styling properties for the shape. Follow default values if not specified otherwise by context.'),
   x: z.number().describe('The primary x-coordinate of the shape (e.g., top-left for rectangle, center for circle, top-left for text).'),
   y: z.number().describe('The primary y-coordinate of the shape (e.g., top-left for rectangle, center for circle, top-left for text).'),
-  width: z.number().min(1).optional().describe('The width of the shape. Required and must be positive for rectangles. Optional for text (estimated). Omit for circles, lines, arrows.'),
-  height: z.number().min(1).optional().describe('The height of the shape. Required and must be positive for rectangles. Optional for text (estimated). Omit for circles, lines, arrows.'),
-  points: z.array(PointSchema).optional().describe('An array of points. Required for lines and arrows (exactly two points: [startPoint, endPoint]). Omit for other shapes.'),
-  radius: z.number().min(1).optional().describe('The radius of the shape. Required and must be positive for circles. Omit for other shapes.'),
-  text: z.string().min(1).optional().describe('The text content. Required and must not be empty for text shapes. Omit for other shapes.'),
   rotation: z.number().min(0).max(360).optional().describe('The rotation angle of the shape in degrees (0-360). Default: 0. Optional.'),
 });
 
-// Specific shape schemas for AI, extending the AI base schema
-const RectangleShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.enum(['rectangle']).describe("The type of the shape. For this shape, it MUST be the exact string 'rectangle'."),
+// Specific shape schemas for AI, extending the base schema
+const RectangleShapeSchemaZod = BaseShapeSchemaZod.extend({
+  type: z.enum(['rectangle']).describe("The type identifier for this shape. MUST be the exact string 'rectangle'."),
   width: z.number().min(1).describe('The width of the rectangle. Must be a positive number.'),
   height: z.number().min(1).describe('The height of the rectangle. Must be a positive number.'),
-  points: z.undefined({ description: "Not applicable for rectangles. This field should be omitted." }).optional(),
-  radius: z.undefined({ description: "Not applicable for rectangles. This field should be omitted." }).optional(),
-  text: z.undefined({ description: "Not applicable for rectangles. This field should be omitted." }).optional(),
 });
 
-const CircleShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.enum(['circle']).describe("The type of the shape. For this shape, it MUST be the exact string 'circle'."),
+const CircleShapeSchemaZod = BaseShapeSchemaZod.extend({
+  type: z.enum(['circle']).describe("The type identifier for this shape. MUST be the exact string 'circle'."),
   radius: z.number().min(1).describe('The radius of the circle. Must be a positive number.'),
-  width: z.number().min(1).optional().describe('Optional: width of the circle (diameter). If provided, should be 2 * radius. Can be omitted.'),
-  height: z.number().min(1).optional().describe('Optional: height of the circle (diameter). If provided, should be 2 * radius. Can be omitted.'),
-  points: z.undefined({ description: "Not applicable for circles. This field should be omitted." }).optional(),
-  text: z.undefined({ description: "Not applicable for circles. This field should be omitted." }).optional(),
+  // x and y for circle are its center.
 });
 
-const LineShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.enum(['line']).describe("The type of the shape. For this shape, it MUST be the exact string 'line'."),
-  points: z.array(PointSchema).length(2, { message: "Line 'points' must be an array of exactly two Point objects." }).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape should generally be the coordinates of the first point in this array, or (0,0) if points are absolute world coordinates.'),
-  width: z.undefined({ description: "Not applicable for lines. This field should be omitted." }).optional(),
-  height: z.undefined({ description: "Not applicable for lines. This field should be omitted." }).optional(),
-  radius: z.undefined({ description: "Not applicable for lines. This field should be omitted." }).optional(),
-  text: z.undefined({ description: "Not applicable for lines. This field should be omitted." }).optional(),
+const LineShapeSchemaZod = BaseShapeSchemaZod.extend({
+  type: z.enum(['line']).describe("The type identifier for this shape. MUST be the exact string 'line'."),
+  points: z.array(PointSchema).length(2, { message: "Line 'points' must be an array of exactly two Point objects." }).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape can be the coordinates of the first point in this array, or (0,0) if points are absolute world coordinates.'),
 });
 
-const ArrowShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.enum(['arrow']).describe("The type of the shape. For this shape, it MUST be the exact string 'arrow'."),
-  points: z.array(PointSchema).length(2, { message: "Arrow 'points' must be an array of exactly two Point objects." }).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape should generally be the coordinates of the first point in this array, or (0,0) if points are absolute world coordinates.'),
-  width: z.undefined({ description: "Not applicable for arrows. This field should be omitted." }).optional(),
-  height: z.undefined({ description: "Not applicable for arrows. This field should be omitted." }).optional(),
-  radius: z.undefined({ description: "Not applicable for arrows. This field should be omitted." }).optional(),
-  text: z.undefined({ description: "Not applicable for arrows. This field should be omitted." }).optional(),
+const ArrowShapeSchemaZod = BaseShapeSchemaZod.extend({
+  type: z.enum(['arrow']).describe("The type identifier for this shape. MUST be the exact string 'arrow'."),
+  points: z.array(PointSchema).length(2, { message: "Arrow 'points' must be an array of exactly two Point objects." }).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape can be the coordinates of the first point in this array, or (0,0) if points are absolute world coordinates.'),
 });
 
-const TextShapeSchemaAI = BaseShapeSchemaForAI.extend({
-  type: z.enum(['text']).describe("The type of the shape. For this shape, it MUST be the exact string 'text'."),
+const TextShapeSchemaZod = BaseShapeSchemaZod.extend({
+  type: z.enum(['text']).describe("The type identifier for this shape. MUST be the exact string 'text'."),
   text: z.string().min(1, { message: "Text content for a 'text' shape cannot be empty." }).describe('The text content. Must not be empty.'),
   width: z.number().min(1).optional().describe('Optional: The estimated width of the text bounding box. If provided, must be positive. Helpful for layout if determinable.'),
   height: z.number().min(1).optional().describe('Optional: The estimated height of the text bounding box. If provided, must be positive. Helpful for layout if determinable.'),
-  points: z.undefined({ description: "Not applicable for text. This field should be omitted." }).optional(),
-  radius: z.undefined({ description: "Not applicable for text. This field should be omitted." }).optional(),
 });
 
 // This is the primary schema for a single shape that the AI will generate.
-export const DrawingShapeSchema = z.union([
-  RectangleShapeSchemaAI,
-  CircleShapeSchemaAI,
-  LineShapeSchemaAI,
-  ArrowShapeSchemaAI,
-  TextShapeSchemaAI,
-]).describe('A single drawable shape on the canvas. It can be a rectangle, circle, line, arrow, or text. Ensure the `type` field is one of these exact strings and all required fields for that type are present. Omit fields marked as "Not applicable" or "should be omitted" for a given shape type.');
+// It uses a discriminated union based on the 'type' field.
+export const DrawingShapeSchema = z.discriminatedUnion('type', [
+  RectangleShapeSchemaZod,
+  CircleShapeSchemaZod,
+  LineShapeSchemaZod,
+  ArrowShapeSchemaZod,
+  TextShapeSchemaZod,
+]).describe('A single drawable shape on the canvas. It must be one of the specified types. Ensure the `type` field is one of: "rectangle", "circle", "line", "arrow", "text", and all required fields for that type are present. Omit fields not applicable to a given shape type.');
 export type DrawingShape = z.infer<typeof DrawingShapeSchema>;
 
 
@@ -159,6 +140,3 @@ export const AiGeneratedProjectPlanSchema = z.object({
     tasks: z.array(ProjectPlanTaskSchema).describe("Array of tasks for the project plan. Define clear tasks with appropriate details. Consider logical flow and dependencies.")
 });
 export type AiGeneratedProjectPlan = z.infer<typeof AiGeneratedProjectPlanSchema>;
-
-
-    
