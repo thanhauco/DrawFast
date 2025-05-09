@@ -31,32 +31,32 @@ export const BaseShapeSchema = z.object({
 });
 
 export const RectangleShapeSchema = BaseShapeSchema.extend({
-  type: z.enum(['rectangle']).describe("The type of the shape, must be 'rectangle'."),
+  type: z.literal('rectangle').describe("The type of the shape, must be 'rectangle'."),
   width: z.number().min(0).describe('The width of the rectangle.'),
   height: z.number().min(0).describe('The height of the rectangle.'),
 });
 export type RectangleShape = z.infer<typeof RectangleShapeSchema>;
 
 export const CircleShapeSchema = BaseShapeSchema.extend({
-  type: z.enum(['circle']).describe("The type of the shape, must be 'circle'."),
+  type: z.literal('circle').describe("The type of the shape, must be 'circle'."),
   radius: z.number().min(0).describe('The radius of the circle.'),
 });
 export type CircleShape = z.infer<typeof CircleShapeSchema>;
 
 export const LineShapeSchema = BaseShapeSchema.extend({
-  type: z.enum(['line']).describe("The type of the shape, must be 'line'."),
-  points: z.array(PointSchema).length(2).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape can be 0 or the coordinates of the first point.'),
+  type: z.literal('line').describe("The type of the shape, must be 'line'."),
+  points: z.array(PointSchema).min(2).max(2).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape can be 0 or the coordinates of the first point.'),
 });
 export type LineShape = z.infer<typeof LineShapeSchema>;
 
 export const ArrowShapeSchema = BaseShapeSchema.extend({
-  type: z.enum(['arrow']).describe("The type of the shape, must be 'arrow'."),
-  points: z.array(PointSchema).length(2).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape can be 0 or the coordinates of the first point.'),
+  type: z.literal('arrow').describe("The type of the shape, must be 'arrow'."),
+  points: z.array(PointSchema).min(2).max(2).describe('An array of exactly two Points: [startPoint, endPoint]. The top-level x/y for this shape can be 0 or the coordinates of the first point.'),
 });
 export type ArrowShape = z.infer<typeof ArrowShapeSchema>;
 
 export const TextShapeSchema = BaseShapeSchema.extend({
-  type: z.enum(['text']).describe("The type of the shape, must be 'text'."),
+  type: z.literal('text').describe("The type of the shape, must be 'text'."),
   text: z.string().describe('The text content.'),
 });
 export type TextShape = z.infer<typeof TextShapeSchema>;
@@ -88,7 +88,7 @@ export type AiGeneratedShapes = z.infer<typeof AiGeneratedShapesSchema>;
 // Board Item Schema (example, can be expanded)
 export const BoardItemSchema = z.object({
     id: z.string().uuid().describe("Unique ID for the board item."),
-    type: z.enum(['note', 'topic', 'action_item']).describe("Type of board item."),
+    type: z.enum(['note', 'topic', 'action_item']).describe("Type of board item."), // Using z.enum here as it's for a different flow
     content: z.string().describe("Text content of the item."),
     x: z.number().describe("X position on the board (conceptual)."),
     y: z.number().describe("Y position on the board (conceptual)."),
@@ -126,7 +126,7 @@ export const ProjectPlanTaskSchema = z.object({
     assignee: z.string().optional().describe("Person or team assigned to the task."),
     startDate: z.string().optional().describe("Start date (e.g., YYYY-MM-DD)."),
     endDate: z.string().optional().describe("End date (e.g., YYYY-MM-DD)."),
-    status: z.enum(['todo', 'in_progress', 'completed', 'blocked']).optional().describe("Current status of the task."),
+    status: z.enum(['todo', 'in_progress', 'completed', 'blocked']).optional().describe("Current status of the task."), // Using z.enum here
     dependencies: z.array(z.string().uuid()).optional().describe("Array of task IDs this task depends on."),
     description: z.string().optional().describe("Detailed description of the task.")
 });
