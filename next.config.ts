@@ -21,8 +21,13 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: [
+        '@opentelemetry/api',
+        '@opentelemetry/sdk-trace-base',
         '@opentelemetry/sdk-trace-node',
-        '@opentelemetry/context-async-hooks'
+        '@opentelemetry/context-async-hooks',
+        '@opentelemetry/resources',
+        '@opentelemetry/semantic-conventions',
+        // Any other OTel packages that might cause issues can be added here
     ],
   },
 };
