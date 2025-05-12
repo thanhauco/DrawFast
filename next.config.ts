@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
         '@opentelemetry/context-async-hooks',
         '@opentelemetry/resources',
         '@opentelemetry/semantic-conventions',
+        // Mark genkit as external as it might use Node-specific APIs like async_hooks via OTel
+        'genkit', 
         // Any other OTel packages that might cause issues can be added here
     ],
   },
