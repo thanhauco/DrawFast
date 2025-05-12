@@ -23,12 +23,12 @@ const nextConfig: NextConfig = {
     serverComponentsExternalPackages: [
         '@opentelemetry/api',
         '@opentelemetry/sdk-trace-base',
-        '@opentelemetry/sdk-trace-node',
-        '@opentelemetry/context-async-hooks',
+        '@opentelemetry/sdk-trace-node', // Keep this top-level SDK
         '@opentelemetry/resources',
         '@opentelemetry/semantic-conventions',
         // Mark genkit as external as it might use Node-specific APIs like async_hooks via OTel
-        'genkit', 
+        'genkit',
+        // '@opentelemetry/context-async-hooks', // Removed explicit entry
         // Any other OTel packages that might cause issues can be added here
     ],
   },
