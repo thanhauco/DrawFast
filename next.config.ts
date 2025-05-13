@@ -23,14 +23,25 @@ const nextConfig: NextConfig = {
     serverComponentsExternalPackages: [
         '@opentelemetry/api',
         '@opentelemetry/sdk-trace-base',
-        '@opentelemetry/sdk-trace-node', // Keep this top-level SDK
+        '@opentelemetry/sdk-trace-node',
         '@opentelemetry/resources',
         '@opentelemetry/semantic-conventions',
-        // Mark genkit as external as it might use Node-specific APIs like async_hooks via OTel
         'genkit',
-        // '@opentelemetry/context-async-hooks', // Removed explicit entry
-        // Any other OTel packages that might cause issues can be added here
+        '@opentelemetry/instrumentation',
+        '@opentelemetry/exporter-trace-otlp-http',
+        '@opentelemetry/context-async-hooks',
     ],
+  },
+  webpack: (config, { isServer }) => {
+    // Add this rule to handle 'async_hooks' specifically for client builds
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}), // Spread existing fallback if any
+        async_hooks: false, // Provide a fallback for async_hooks on the client
+      };
+    }
+    // Important: return the modified config
+    return config;
   },
 };
 
